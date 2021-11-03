@@ -91,13 +91,16 @@ const gameBoard = (() => {
 })();
 
 const displayController = (() => {
-  // Private
   const _playerOne = PlayerFactory("Player One", "x");
   const _playerTwo = PlayerFactory("Player Two", "o");
   let _currentPlayer = null;
 
+  /* DOM */
   const _DOMGrid = document.querySelectorAll("[data-index]");
+  const _DomStartButton = document.querySelector("button");
+  const _DOMPlayerTurn = document.querySelector(".player-turn");
 
+  /* Event Listeners */
   const _addClickListenerToGrid = () => {
     _DOMGrid.forEach((gridItem) => {
       gridItem.addEventListener("click", _gridClickHandler);
@@ -109,24 +112,52 @@ const displayController = (() => {
       gridItem.removeEventListener("click", _gridClickHandler);
     });
   };
-
-  const _nextTurn = () => {
-    _currentPlayer = _currentPlayer === _playerOne ? _playerTwo : _playerOne;
-  };
-
   const _gridClickHandler = (e) => {
     const gridIndex = Number(e.target.dataset.index);
     // Only allow to be clicked if that slot is empty
     if (e.target.innerText != "") return;
 
     gameBoard.insertAt(gridIndex, _currentPlayer.symbol);
-    console.log(gameBoard.isGameOver());
-    renderGameBoard();
+    _renderGameBoard();
     _nextTurn();
   };
 
-  // Public
-  const renderGameBoard = () => {
+  const _startGame = (e) => {
+    _addClickListenerToGrid();
+    gameBoard.reset();
+    _renderGameBoard();
+    _currentPlayer = _playerOne;
+    _nextTurn();
+    _DomStartButton.textContent = "Restart";
+  };
+
+  const _gameOver = () => {
+    _removeClickListenerFromGrid();
+    // Check for Tie
+    if (gameBoard.getWinner() == "tie") {
+      setTimeout(() => {
+        alert("Tie");
+      }, 100);
+    } else {
+      setTimeout(() => {
+        alert(`${gameBoard.getWinner().toUpperCase()} Won!!`);
+      }, 100);
+    }
+
+    _DOMPlayerTurn.innerText = "";
+  };
+
+  const _nextTurn = () => {
+    if (gameBoard.isGameOver()) {
+      _gameOver();
+      return;
+    }
+
+    _currentPlayer = _currentPlayer === _playerOne ? _playerTwo : _playerOne;
+    _DOMPlayerTurn.innerText = `Player Turn: ${_currentPlayer.symbol.toUpperCase()}`;
+  };
+
+  const _renderGameBoard = () => {
     const gameBoardArray = gameBoard.getGameBoardArray();
 
     _DOMGrid.forEach((gridItem, index) => {
@@ -134,13 +165,5 @@ const displayController = (() => {
     });
   };
 
-  const startGame = () => { 
-    _currentPlayer = _playerOne;
-  };
-
-  startGame();
-  _addClickListenerToGrid();
-
-  // Return Module
-  return { renderGameBoard, startGame, _removeClickListenerFromGrid };
+  _DomStartButton.addEventListener("click", _startGame);
 })();
